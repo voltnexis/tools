@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoltNexis Media Player</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .container { text-align: center; max-width: 700px; padding: 3rem; background: rgba(255,255,255,0.1); backdrop-filter: blur(20px); border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
+        .logo { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-bottom: 2rem; }
+        .logo-icon { font-size: 3rem; }
+        h1 { font-size: 2.8rem; margin: 0; background: linear-gradient(45deg, #ffffff, #00f5ff, #ffffff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 900; text-shadow: 0 0 30px rgba(0,245,255,0.5); filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); }
+        .subtitle { color: #e0e0e0; margin-bottom: 2.5rem; font-size: 1.1rem; }
+        .input-group { margin-bottom: 2rem; }
+        input { width: 100%; padding: 1.2rem; border: 2px solid rgba(255,255,255,0.2); border-radius: 15px; background: rgba(255,255,255,0.1); color: #fff; font-size: 1.1rem; backdrop-filter: blur(10px); }
+        input:focus { outline: none; border-color: #00f5ff; box-shadow: 0 0 20px rgba(0,245,255,0.3); }
+        input::placeholder { color: #ccc; }
+        button { background: linear-gradient(45deg, #00f5ff, #ff00ff); border: none; padding: 1.2rem 2.5rem; border-radius: 15px; color: #fff; font-size: 1.1rem; cursor: pointer; margin: 0.8rem; font-weight: 600; transition: all 0.3s ease; }
+        button:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,245,255,0.4); }
+        .features { text-align: left; margin-top: 2rem; }
+        .features h3 { color: #00f5ff; margin-bottom: 1rem; font-size: 1.3rem; }
+        .features ul { list-style: none; }
+        .features li { padding: 0.6rem 0; color: #e0e0e0; font-size: 1.05rem; }
+        .features li:before { content: "⚡ "; color: #00f5ff; font-weight: bold; }
+        .usage { background: rgba(0,0,0,0.3); padding: 2rem; border-radius: 15px; margin-top: 2rem; text-align: left; border: 1px solid rgba(255,255,255,0.1); }
+        .usage h3 { color: #ff00ff; margin-bottom: 1rem; font-size: 1.3rem; }
+        .usage code { background: rgba(0,245,255,0.2); padding: 0.3rem 0.6rem; border-radius: 6px; color: #00f5ff; font-weight: 500; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <div class="logo-icon">⚡</div>
+            <h1>VoltNexis</h1>
+        </div>
+        <p class="subtitle">Universal Media Player for Videos, Audio & Images</p>
+        
+        <div class="input-group">
+            <input type="url" id="mediaUrl" placeholder="Enter media URL (video, audio, or image)" />
+            <button onclick="playMedia()">Play Media</button>
+        </div>
+
+        <div class="usage">
+            <h3>How to Use:</h3>
+            <p>1. Add <code>?url=your_media_url</code> to the end of this page URL</p>
+            <p>2. Replace <code>your_media_url</code> with your media file URL</p>
+            <br>
+            <p><strong>or simply:</strong></p>
+            <p>Enter media URL above and click Play Media</p>
+        </div>
+
+        <div class="features">
+            <h3>Advantages:</h3>
+            <ul>
+                <li>Supports videos (MP4, WebM, AVI, MOV)</li>
+                <li>Supports audio (MP3, WAV, OGG, M4A)</li>
+                <li>Supports images (JPG, PNG, WebP, GIF)</li>
+                <li>Supports documents (PDF, DOC, TXT, PPT, XLS)</li>
+                <li>YouTube-like video player experience</li>
+                <li>Spotify-like audio player interface</li>
+                <li>Instagram-like image viewer</li>
+                <li>Advanced document viewer with zoom & search</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function getMediaType(url) {
+            const videoExts = ['mp4', 'webm', 'avi', 'mov', 'mkv', 'flv', 'wmv'];
+            const audioExts = ['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac'];
+            const imageExts = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp', 'svg'];
+            const docExts = ['pdf', 'doc', 'docx', 'txt', 'ppt', 'pptx', 'xls', 'xlsx', 'md', 'json', 'xml', 'csv'];
+            
+            const ext = url.split('.').pop().toLowerCase().split('?')[0];
+            
+            if (videoExts.includes(ext)) return 'video';
+            if (audioExts.includes(ext)) return 'audio';
+            if (imageExts.includes(ext)) return 'image';
+            if (docExts.includes(ext)) return 'doc';
+            
+            return 'video'; // default to video for unknown types
+        }
+
+        function playMedia() {
+            const url = document.getElementById('mediaUrl').value.trim();
+            if (!url) {
+                alert('Please enter a media URL');
+                return;
+            }
+            
+            const mediaType = getMediaType(url);
+            window.location.href = `/${mediaType}/?url=${encodeURIComponent(url)}`;
+        }
+
+        // Handle URL parameter on page load
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const mediaUrl = urlParams.get('url');
+            
+            if (mediaUrl) {
+                const mediaType = getMediaType(mediaUrl);
+                window.location.href = `/${mediaType}/?url=${encodeURIComponent(mediaUrl)}`;
+            }
+        };
+
+        // Enter key support
+        document.getElementById('mediaUrl').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                playMedia();
+            }
+        });
+    </script>
+</body>
+</html>

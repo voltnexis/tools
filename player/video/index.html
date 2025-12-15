@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  
+  <title>VoltNexis Video Player</title>
+  <meta name="description" content="VoltNexis Video Player - Advanced video player with YouTube-like interface and mobile optimization.">
+  
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 100%);
+      color: white;
+      overflow-x: hidden;
+      -webkit-text-size-adjust: 100%;
+      -ms-text-size-adjust: 100%;
+    }
+    
+    .header {
+      padding: 1rem 2rem;
+      background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(20px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .logo {
+      font-size: 1.5rem;
+      font-weight: bold;
+      background: linear-gradient(45deg, #00f5ff, #ff00ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .back-btn {
+      background: linear-gradient(45deg, #00f5ff, #ff00ff);
+      border: none;
+      color: #fff;
+      padding: 0.6rem 1.2rem;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+    
+    .back-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0,245,255,0.4);
+    }
+    
+    .yt-video-container {
+      max-width: 1280px;
+      margin: 20px auto;
+      padding: 20px;
+      position: relative;
+    }
+    
+    .yt-video-wrapper {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16/9;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    
+    .yt-video {
+      width: 100%;
+      height: 100%;
+      background: #000;
+      object-fit: cover;
+    }
+    
+    .yt-video::-webkit-media-controls {
+      display: none !important;
+    }
+    
+    .custom-controls {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(transparent, rgba(0,0,0,0.8));
+      padding: 20px 16px 16px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+    
+    .custom-controls.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    
+    .yt-video-wrapper:hover .custom-controls {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    
+    .progress-container {
+      margin-bottom: 12px;
+    }
+    
+    .progress-bar {
+      width: 100%;
+      height: 4px;
+      background: rgba(255,255,255,0.3);
+      border-radius: 2px;
+      cursor: pointer;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      background: #00f5ff;
+      border-radius: 2px;
+      width: 0%;
+      transition: width 0.1s;
+    }
+    
+    .control-buttons {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .control-btn {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 4px;
+    }
+    
+    .control-btn:hover { background: rgba(255,255,255,0.1); }
+    
+    .volume-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .volume-slider {
+      width: 60px;
+      height: 4px;
+    }
+    
+    .center-play-btn {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.7);
+      border: none;
+      color: white;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      font-size: 32px;
+      cursor: pointer;
+      display: none;
+      z-index: 10;
+    }
+    
+    .yt-info {
+      padding: 16px 0;
+    }
+    
+    .yt-title {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    
+    .yt-meta {
+      color: #aaa;
+      font-size: 14px;
+    }
+    
+    .error {
+      background: #ff4444;
+      color: #fff;
+      padding: 2rem;
+      border-radius: 8px;
+      margin: 2rem;
+      text-align: center;
+    }
+    
+    @media screen and (max-width: 768px) {
+      body {
+        -webkit-user-select: none;
+        -webkit-touch-callout: none;
+      }
+      
+      .yt-video-container {
+        padding: 10px;
+      }
+      
+      .custom-controls {
+        padding: 15px 12px 12px;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+      }
+      
+      .control-buttons {
+        gap: 8px;
+      }
+      
+      .control-btn {
+        font-size: 16px;
+        padding: 10px;
+        min-width: 44px;
+        min-height: 44px;
+      }
+      
+      .volume-container {
+        display: none;
+      }
+      
+      .progress-bar {
+        height: 6px;
+        margin-bottom: 15px;
+      }
+      
+      .center-play-btn {
+        width: 60px;
+        height: 60px;
+        font-size: 24px;
+      }
+      
+      .yt-title {
+        font-size: 18px;
+        line-height: 1.3;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">⚡ VN Video Player</div>
+    <button class="back-btn" onclick="goBack()">← Back to Home</button>
+  </div>
+
+  <div id="error-message" class="error" style="display: none;">
+    Failed to load video. Please check the URL and try again.
+  </div>
+
+  <div class="yt-video-container" id="videoContainer" style="display: none;">
+    <div class="yt-video-wrapper">
+      <video id="ytVideo" class="yt-video" disablePictureInPicture></video>
+      <button id="centerPlayBtn" class="center-play-btn" onclick="togglePlayPause()">▶</button>
+      <div class="custom-controls" id="customControls">
+        <div class="progress-container">
+          <div class="progress-bar" onclick="seekVideo(event)">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+        </div>
+        <div class="control-buttons">
+          <button class="control-btn" id="playPauseBtn" onclick="togglePlayPause()">▶</button>
+          <div class="volume-container">
+            <button class="control-btn" id="volumeBtn" onclick="toggleMute()">🔊</button>
+            <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="100" onchange="setVolume(this.value)">
+          </div>
+          <span id="timeDisplay" style="font-size:14px;color:#ccc;">0:00 / 0:00</span>
+          <div style="flex:1;"></div>
+          <button class="control-btn" onclick="downloadVideo()" title="Download">
+            <img src="../assets/icons/download.png" style="width:16px;height:16px;filter:brightness(0) invert(1);" onerror="this.outerHTML='⬇'">
+          </button>
+          <button class="control-btn" onclick="shareVideo()" title="Share">
+            <img src="../assets/icons/share.png" style="width:16px;height:16px;filter:brightness(0) invert(1);" onerror="this.outerHTML='🔗'">
+          </button>
+          <button class="control-btn" onclick="toggleFullscreen()">⛶</button>
+        </div>
+      </div>
+    </div>
+    <div class="yt-info">
+      <h1 class="yt-title" id="ytTitle">Video Title</h1>
+      <div class="yt-meta" id="ytMeta">VoltNexis Video Player</div>
+    </div>
+  </div>
+
+  <script>
+    let currentPlayer = null;
+    
+    function goBack() {
+      window.location.href = '../';
+    }
+    
+    function togglePlayPause() {
+      if (!currentPlayer) return;
+      if (currentPlayer.paused) {
+        currentPlayer.play();
+      } else {
+        currentPlayer.pause();
+      }
+    }
+    
+    function seekVideo(event) {
+      const progressBar = event.currentTarget;
+      const rect = progressBar.getBoundingClientRect();
+      const clientX = event.clientX || (event.touches && event.touches[0].clientX);
+      const pos = (clientX - rect.left) / rect.width;
+      currentPlayer.currentTime = pos * currentPlayer.duration;
+    }
+    
+    function setVolume(value) {
+      currentPlayer.volume = value / 100;
+      updateVolumeIcon();
+    }
+    
+    function toggleMute() {
+      currentPlayer.muted = !currentPlayer.muted;
+      updateVolumeIcon();
+    }
+    
+    function updateVolumeIcon() {
+      const btn = document.getElementById('volumeBtn');
+      if (currentPlayer.muted || currentPlayer.volume === 0) {
+        btn.textContent = '🔇';
+      } else if (currentPlayer.volume < 0.5) {
+        btn.textContent = '🔉';
+      } else {
+        btn.textContent = '🔊';
+      }
+    }
+    
+    function toggleFullscreen() {
+      const container = document.querySelector('.yt-video-wrapper');
+      if (!document.fullscreenElement) {
+        if (container.requestFullscreen) {
+          container.requestFullscreen();
+        } else if (container.webkitRequestFullscreen) {
+          container.webkitRequestFullscreen();
+        }
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+          document.webkitExitFullscreen();
+        }
+      }
+    }
+    
+    function downloadVideo() {
+      const url = new URLSearchParams(window.location.search).get('url');
+      if (url) {
+        fetch(url)
+          .then(response => response.blob())
+          .then(blob => {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = url.split('/').pop().split('?')[0] || 'video';
+            a.click();
+            URL.revokeObjectURL(a.href);
+          })
+          .catch(() => {
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = url.split('/').pop().split('?')[0] || 'video';
+            a.click();
+          });
+      }
+    }
+    
+    function shareVideo() {
+      const currentUrl = window.location.href;
+      if (navigator.share) {
+        navigator.share({
+          title: 'VoltNexis Video Player',
+          url: currentUrl
+        });
+      } else {
+        navigator.clipboard.writeText(currentUrl).then(() => {
+          alert('URL copied to clipboard!');
+        });
+      }
+    }
+    
+    function updateProgress() {
+      const video = currentPlayer;
+      const progress = (video.currentTime / video.duration) * 100;
+      document.getElementById('progressFill').style.width = progress + '%';
+      
+      const current = formatTime(video.currentTime);
+      const total = formatTime(video.duration);
+      document.getElementById('timeDisplay').textContent = `${current} / ${total}`;
+    }
+    
+    function formatTime(seconds) {
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60);
+      return `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+    
+    function setupVideoEvents() {
+      const video = currentPlayer;
+      const controls = document.getElementById('customControls');
+      const videoWrapper = document.querySelector('.yt-video-wrapper');
+      let controlsTimeout;
+      const isMobile = window.innerWidth <= 768;
+      
+      video.addEventListener('timeupdate', updateProgress);
+      video.addEventListener('play', () => {
+        document.getElementById('playPauseBtn').textContent = '⏸';
+        document.getElementById('centerPlayBtn').style.display = 'none';
+        if (!isMobile) {
+          showControls();
+          hideControlsAfterDelay();
+        }
+      });
+      video.addEventListener('pause', () => {
+        document.getElementById('playPauseBtn').textContent = '▶';
+        document.getElementById('centerPlayBtn').style.display = 'block';
+        showControls();
+      });
+      video.addEventListener('click', (e) => {
+        if (e.target.closest('.custom-controls')) return;
+        togglePlayPause();
+        showControls();
+        if (!isMobile && !video.paused) hideControlsAfterDelay();
+      });
+      
+      if (!isMobile) {
+        videoWrapper.addEventListener('mousemove', () => {
+          showControls();
+          hideControlsAfterDelay();
+        });
+      }
+      
+      showControls();
+      if (!isMobile) hideControlsAfterDelay();
+      
+      function showControls() {
+        controls.classList.add('show');
+        clearTimeout(controlsTimeout);
+      }
+      
+      function hideControlsAfterDelay() {
+        clearTimeout(controlsTimeout);
+        controlsTimeout = setTimeout(() => {
+          if (!video.paused && (!isMobile || document.fullscreenElement)) {
+            controls.classList.remove('show');
+          }
+        }, 3000);
+      }
+    }
+    
+    window.onload = function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const videoUrl = urlParams.get('url');
+      
+      if (!videoUrl) {
+        document.getElementById('error-message').textContent = 'No video URL provided.';
+        document.getElementById('error-message').style.display = 'block';
+        return;
+      }
+      
+      currentPlayer = document.getElementById('ytVideo');
+      currentPlayer.src = videoUrl;
+      
+      const filename = videoUrl.split('/').pop().split('?')[0] || 'Video';
+      document.getElementById('ytTitle').textContent = decodeURIComponent(filename);
+      
+      currentPlayer.addEventListener('loadedmetadata', () => {
+        document.getElementById('videoContainer').style.display = 'block';
+        setupVideoEvents();
+      });
+      
+      currentPlayer.addEventListener('error', () => {
+        document.getElementById('error-message').style.display = 'block';
+      });
+    };
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (!currentPlayer) return;
+      
+      switch(e.code) {
+        case 'Space':
+          e.preventDefault();
+          togglePlayPause();
+          break;
+        case 'KeyF':
+          toggleFullscreen();
+          break;
+        case 'KeyM':
+          toggleMute();
+          break;
+        case 'ArrowLeft':
+          currentPlayer.currentTime -= 10;
+          break;
+        case 'ArrowRight':
+          currentPlayer.currentTime += 10;
+          break;
+      }
+    });
+  </script>
+</body>
+</html>
