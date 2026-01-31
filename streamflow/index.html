@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- SEO Meta Tags -->
+    <title>VoltNexis Stream Flow | Professional HLS & MP4 Media Player</title>
+    <meta name="description" content="VoltNexis Stream Flow is a high-performance web-based video player supporting HLS (.m3u8), MP4, and WebM. Experience low-latency streaming with a custom-built, beautiful UI.">
+    <meta name="keywords" content="HLS player, m3u8 player, video streaming, VoltNexis, web video player, live stream, professional media player">
+    <meta name="author" content="VoltNexis">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://voltnexis-streamflow.com/">
+    <meta property="og:title" content="VoltNexis Stream Flow | High Performance Streaming">
+    <meta property="og:description" content="Professional-grade video streaming interface for HLS and MP4 with custom landscape orientation support.">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:title" content="VoltNexis Stream Flow">
+    <meta property="twitter:description" content="Modern web player for high-quality video streams.">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.4.12/hls.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap');
+        
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #050505;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+
+        .glass-panel {
+            background: rgba(15, 15, 15, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .video-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background: #000;
+            border-radius: 1rem;
+            overflow: hidden;
+            box-shadow: 0 0 40px rgba(99, 102, 241, 0.15);
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            cursor: pointer;
+        }
+
+        /* Custom Controls Styling */
+        .controls-overlay {
+            background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 40%, transparent 100%);
+            transition: opacity 0.3s ease;
+            pointer-events: none; /* Allow clicks to pass to video unless on a button */
+        }
+
+        .controls-overlay > * {
+            pointer-events: auto; /* Re-enable for the actual controls */
+        }
+
+        .progress-bar-container {
+            height: 4px;
+            transition: height 0.1s ease;
+        }
+        .progress-bar-container:hover {
+            height: 6px;
+        }
+
+        input[type=range] {
+            accent-color: var(--primary);
+            cursor: pointer;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .btn-glow:hover {
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+        }
+
+        /* Hide native controls */
+        video::-webkit-media-controls {
+            display: none !important;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4 md:p-8">
+
+    <!-- Brand Header -->
+    <header class="mb-12 text-center fade-in">
+        <div class="flex flex-col items-center justify-center gap-4 mb-2">
+            <img src="https://voltnexis.github.io/assets/logo-new.webp" alt="VoltNexis Logo" class="h-16 w-auto">
+            <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight">
+                VoltNexis <span class="text-indigo-500">Stream Flow</span>
+            </h1>
+        </div>
+        <p class="text-zinc-400 text-lg">Next-generation media playback engine</p>
+    </header>
+
+    <!-- Setup View -->
+    <div id="setup-view" class="w-full max-w-2xl glass-panel p-8 md:p-12 rounded-3xl fade-in shadow-2xl">
+        <div class="space-y-8">
+            <div class="space-y-3">
+                <label class="block text-sm font-semibold text-zinc-300 uppercase tracking-widest">Stream Source</label>
+                <div class="relative group">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-zinc-500 group-focus-within:text-indigo-500 transition-colors">
+                        <i data-lucide="link" class="w-5 h-5"></i>
+                    </div>
+                    <input 
+                        type="text" 
+                        id="stream-url" 
+                        placeholder="Enter .m3u8 or .mp4 URL..."
+                        class="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl py-4 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all text-white placeholder:text-zinc-600"
+                    >
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <button onclick="loadStream()" class="btn-glow flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 rounded-xl transition-all active:scale-95 shadow-lg shadow-indigo-900/40">
+                    <i data-lucide="play-circle" class="w-5 h-5"></i>
+                    Initialize Stream
+                </button>
+                <button onclick="useDemo()" class="flex items-center justify-center gap-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-bold py-4 rounded-xl transition-all border border-zinc-700">
+                    <i data-lucide="sparkles" class="w-5 h-5"></i>
+                    Quick Demo
+                </button>
+            </div>
+            
+            <div id="error-container" class="hidden p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm flex items-center gap-3">
+                <i data-lucide="alert-circle" class="w-5 h-5"></i>
+                <span id="error-msg"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Player View -->
+    <div id="player-view" class="w-full max-w-6xl hidden fade-in">
+        <div class="video-wrapper group" id="main-container">
+            <!-- Click to toggle play on the video itself -->
+            <video id="video" crossorigin="anonymous" playsinline onclick="togglePlay()"></video>
+            
+            <!-- Custom Controls -->
+            <div id="custom-controls" class="controls-overlay absolute inset-0 flex flex-col justify-end opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-300 px-4 pb-4">
+                
+                <!-- Progress Bar -->
+                <div class="progress-bar-container w-full bg-white/20 rounded-full mb-4 relative cursor-pointer" id="progress-area">
+                    <div id="progress-filled" class="absolute h-full bg-indigo-500 rounded-full w-0"></div>
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <button onclick="togglePlay()" class="text-white hover:text-indigo-400 transition-colors">
+                            <i id="play-icon" data-lucide="play" class="w-6 h-6 fill-current"></i>
+                        </button>
+                        
+                        <div class="flex items-center gap-2 group/vol">
+                            <button onclick="toggleMute()" class="text-white hover:text-indigo-400">
+                                <i id="volume-icon" data-lucide="volume-2" class="w-6 h-6"></i>
+                            </button>
+                            <input type="range" id="volume-slider" min="0" max="1" step="0.1" value="1" class="w-0 group-hover/vol:w-20 transition-all duration-300">
+                        </div>
+
+                        <div class="text-xs font-medium text-zinc-300 tabular-nums">
+                            <span id="current-time">0:00</span> / <span id="duration">0:00</span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-4">
+                        <button onclick="toggleFullscreen()" class="text-white hover:text-indigo-400 transition-colors">
+                            <i data-lucide="maximize" class="w-6 h-6"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading Spinner -->
+            <div id="loading-overlay" class="absolute inset-0 bg-black/60 flex items-center justify-center hidden pointer-events-none">
+                <div class="animate-spin rounded-full h-14 w-14 border-4 border-indigo-500/20 border-t-indigo-500"></div>
+            </div>
+        </div>
+
+        <div class="mt-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 glass-panel p-6 rounded-2xl">
+            <div class="flex items-center gap-4">
+                <div class="p-3 bg-indigo-500/10 rounded-xl text-indigo-500">
+                    <i data-lucide="video" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-zinc-200" id="stream-name">Active Stream</h3>
+                    <p id="display-url" class="text-zinc-500 text-xs font-mono truncate max-w-xs md:max-w-md"></p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <span id="badge-hls" class="px-3 py-1 bg-indigo-500/10 text-indigo-400 text-[10px] font-bold uppercase rounded-full border border-indigo-500/20">HLS Optimized</span>
+                <button onclick="resetPlayer()" class="text-zinc-400 hover:text-white flex items-center gap-2 text-sm font-semibold transition-all hover:bg-zinc-800 py-2 px-4 rounded-xl">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                    Change Source
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        const video = document.getElementById('video');
+        const setupView = document.getElementById('setup-view');
+        const playerView = document.getElementById('player-view');
+        const urlInput = document.getElementById('stream-url');
+        const errorContainer = document.getElementById('error-container');
+        const errorMsg = document.getElementById('error-msg');
+        const displayUrl = document.getElementById('display-url');
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const mainContainer = document.getElementById('main-container');
+        
+        // Custom Controls Elements
+        const playIcon = document.getElementById('play-icon');
+        const volumeIcon = document.getElementById('volume-icon');
+        const volumeSlider = document.getElementById('volume-slider');
+        const progressFilled = document.getElementById('progress-filled');
+        const progressArea = document.getElementById('progress-area');
+        const currentTimeEl = document.getElementById('current-time');
+        const durationEl = document.getElementById('duration');
+
+        let hls = null;
+
+        function showError(msg) {
+            errorMsg.textContent = msg;
+            errorContainer.classList.remove('hidden');
+            setTimeout(() => errorContainer.classList.add('hidden'), 5000);
+        }
+
+        function useDemo() {
+            urlInput.value = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
+            loadStream();
+        }
+
+        function loadStream() {
+            const url = urlInput.value.trim();
+            if (!url) {
+                showError("Please enter a streaming source URL");
+                return;
+            }
+
+            setupView.classList.add('hidden');
+            playerView.classList.remove('hidden');
+            displayUrl.textContent = url;
+            loadingOverlay.classList.remove('hidden');
+
+            const isHLS = url.includes('.m3u8');
+
+            if (isHLS) {
+                if (Hls.isSupported()) {
+                    if (hls) hls.destroy();
+                    hls = new Hls({ capLevelToPlayerSize: true });
+                    hls.loadSource(url);
+                    hls.attachMedia(video);
+                    hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                        loadingOverlay.classList.add('hidden');
+                        video.play().catch(() => {});
+                    });
+                    hls.on(Hls.Events.ERROR, (e, data) => {
+                        if (data.fatal) resetPlayer("Failed to load HLS manifest.");
+                    });
+                } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                    video.src = url;
+                    video.addEventListener('loadedmetadata', () => {
+                        loadingOverlay.classList.add('hidden');
+                        video.play();
+                    });
+                }
+            } else {
+                video.src = url;
+                video.load();
+            }
+        }
+
+        // --- Improved Custom Controls Logic ---
+
+        function togglePlay() {
+            if (video.paused) {
+                video.play();
+            } else {
+                video.pause();
+            }
+        }
+
+        // Sync UI with actual video state
+        video.addEventListener('play', () => updateIcon(playIcon, 'pause'));
+        video.addEventListener('pause', () => updateIcon(playIcon, 'play'));
+
+        function toggleMute() {
+            video.muted = !video.muted;
+            updateVolumeUI();
+        }
+
+        function updateVolumeUI() {
+            if (video.muted || video.volume === 0) {
+                updateIcon(volumeIcon, 'volume-x');
+                volumeSlider.value = 0;
+            } else {
+                updateIcon(volumeIcon, 'volume-2');
+                volumeSlider.value = video.volume;
+            }
+        }
+
+        function updateIcon(el, iconName) {
+            el.setAttribute('data-lucide', iconName);
+            lucide.createIcons();
+        }
+
+        video.addEventListener('timeupdate', () => {
+            const percent = (video.currentTime / video.duration) * 100;
+            progressFilled.style.width = `${percent}%`;
+            currentTimeEl.textContent = formatTime(video.currentTime);
+            if (!isNaN(video.duration)) {
+                durationEl.textContent = formatTime(video.duration);
+            }
+        });
+
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60);
+            const s = Math.floor(seconds % 60);
+            return `${m}:${s < 10 ? '0' : ''}${s}`;
+        }
+
+        progressArea.addEventListener('click', (e) => {
+            const rect = progressArea.getBoundingClientRect();
+            const pos = (e.clientX - rect.left) / rect.width;
+            video.currentTime = pos * video.duration;
+        });
+
+        volumeSlider.addEventListener('input', (e) => {
+            video.volume = e.target.value;
+            video.muted = (video.volume === 0);
+            updateVolumeUI();
+        });
+
+        // --- Fullscreen & Landscape Logic ---
+
+        async function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                try {
+                    if (mainContainer.requestFullscreen) {
+                        await mainContainer.requestFullscreen();
+                    } else if (mainContainer.webkitRequestFullscreen) {
+                        await mainContainer.webkitRequestFullscreen();
+                    }
+                    
+                    if (screen.orientation && screen.orientation.lock) {
+                        screen.orientation.lock('landscape').catch(() => {});
+                    }
+                } catch (err) {
+                    console.log(`Error: ${err.message}`);
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+                if (screen.orientation && screen.orientation.unlock) {
+                    screen.orientation.unlock();
+                }
+            }
+        }
+
+        function resetPlayer(msg = "") {
+            if (msg) showError(msg);
+            if (hls) hls.destroy();
+            video.pause();
+            video.src = "";
+            playerView.classList.add('hidden');
+            setupView.classList.remove('hidden');
+            loadingOverlay.classList.add('hidden');
+        }
+
+        // Global hotkeys
+        window.addEventListener('keydown', (e) => {
+            if (playerView.classList.contains('hidden')) return;
+            if (e.code === 'Space') {
+                e.preventDefault();
+                togglePlay();
+            }
+            if (e.code === 'KeyF') toggleFullscreen();
+            if (e.code === 'KeyM') toggleMute();
+        });
+
+        // Control visibility logic
+        let timeout;
+        const controls = document.getElementById('custom-controls');
+        const handleActivity = () => {
+            controls.style.opacity = '1';
+            mainContainer.style.cursor = 'default';
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                if (!video.paused) {
+                    controls.style.opacity = '0';
+                    mainContainer.style.cursor = 'none';
+                }
+            }, 3000);
+        };
+
+        mainContainer.addEventListener('mousemove', handleActivity);
+        mainContainer.addEventListener('touchstart', handleActivity);
+
+        video.addEventListener('waiting', () => loadingOverlay.classList.remove('hidden'));
+        video.addEventListener('playing', () => {
+            loadingOverlay.classList.add('hidden');
+            updateIcon(playIcon, 'pause');
+        });
+    </script>
+</body>
+</html>
