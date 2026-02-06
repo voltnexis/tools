@@ -3,7 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SQL Playground HD</title>
+    <title>VoltNexis SQL Playground</title>
+    <meta name="description" content="VoltNexis SQL Playground is a fast, browser-based SQL editor for practicing queries, exploring sample data, and exporting results." />
+    <meta name="keywords" content="VoltNexis, SQL playground, SQL editor, browser SQL, query runner, database practice" />
+    <meta name="author" content="VoltNexis" />
+    <meta name="robots" content="index,follow" />
+    <link rel="canonical" href="https://voltnexis.com/sql-playground" />
+    <meta property="og:title" content="VoltNexis SQL Playground" />
+    <meta property="og:description" content="Run SQL queries in your browser with VoltNexis SQL Playground. Practice, explore sample data, and export results instantly." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://voltnexis.com/sql-playground" />
+    <meta property="og:image" content="/img/logo.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="VoltNexis SQL Playground" />
+    <meta name="twitter:description" content="A fast, modern SQL playground with built-in samples and export-ready results." />
+    <meta name="twitter:image" content="/img/logo.png" />
+    <link rel="icon" href="/img/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16x16.png" />
+    <link rel="apple-touch-icon" href="/img/apple-touch-icon.png" />
+    <link rel="manifest" href="/img/site.webmanifest" />
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -111,11 +130,11 @@
             <div class="flex items-center gap-2">
                 <i data-lucide="database" class="w-5 h-5 text-blue-400"></i>
                 <h1 class="font-bold text-lg bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent hidden sm:block">
-                    SQL Playground HD
+                    VoltNexis SQL Playground
                 </h1>
-                <h1 class="font-bold text-lg text-blue-400 sm:hidden">SQL</h1>
+                <h1 class="font-bold text-lg text-blue-400 sm:hidden">VoltNexis</h1>
                 <span class="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-800 text-slate-500 border border-slate-700 font-mono">
-                    Local Cache
+                    VoltNexis
                 </span>
             </div>
         </div>
@@ -366,16 +385,29 @@
                 code = code.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
                 // Simple Regex Syntax Highlighting
+                // Protect strings and comments first to avoid highlighting inside markup.
+                const placeholders = [];
+                const stash = (match, type) => {
+                    const token = `__PLACEHOLDER_${placeholders.length}__`;
+                    placeholders.push({ token, html: `<span class="${type}">${match}</span>` });
+                    return token;
+                };
+
+                // Comments
+                code = code.replace(/--.*/g, (match) => stash(match, 'kw-comment'));
+                // Strings (Simple quote handling)
+                code = code.replace(/(['"])(.*?)\1/g, (match) => stash(match, 'kw-str'));
+
                 // Keywords - kw-main is used but styling is Inherit
                 code = code.replace(/\b(SELECT|FROM|WHERE|INSERT|INTO|VALUES|UPDATE|DELETE|CREATE|TABLE|DROP|JOIN|ON|GROUP|BY|ORDER|LIMIT|AND|OR|NOT|AS|IS|NULL)\b/gi, '<span class="kw-main">$1</span>');
                 // Functions/Types
                 code = code.replace(/\b(COUNT|SUM|AVG|MAX|MIN|INT|STRING|DATE|TEXT)\b/gi, '<span class="kw-func">$1</span>');
                 // Numbers
                 code = code.replace(/\b(\d+)\b/g, '<span class="kw-num">$1</span>');
-                // Strings (Simple quote handling)
-                code = code.replace(/(['"])(.*?)\1/g, '<span class="kw-str">$1$2$1</span>');
-                // Comments
-                code = code.replace(/(--.*)/g, '<span class="kw-comment">$1</span>');
+
+                placeholders.forEach(({ token, html }) => {
+                    code = code.replace(token, html);
+                });
 
                 // Handle trailing newline for visual consistency
                 if (code.endsWith('\n')) {
