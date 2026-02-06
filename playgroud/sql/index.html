@@ -1,1 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQL Playground HD</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Alasql (SQL Engine) -->
+    <script src="https://cdn.jsdelivr.net/npm/alasql@4.0.0/dist/alasql.min.js"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
 
+    <!-- Google Fonts (Inter + JetBrains Mono) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+        /* Custom scrollbar for Webkit */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569; 
+        }
+
+        /* Editor Syntax Highlighting Setup */
+        .editor-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #020617; /* slate-950 */
+        }
+
+        .editor-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 1rem;
+            margin: 0;
+            border: 0;
+            background: transparent;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow: auto;
+            box-sizing: border-box;
+            tab-size: 2;
+        }
+
+        /* The visual layer (Syntax Highlighting) */
+        #code-highlight {
+            z-index: 1;
+            color: #e2e8f0; /* slate-200 */
+            pointer-events: none; /* Let clicks pass through to textarea */
+        }
+
+        /* The interactive layer (Text Input) */
+        #sql-input {
+            z-index: 2;
+            color: transparent; /* Hide text, show caret only */
+            caret-color: #38bdf8; /* Cyan caret */
+            resize: none;
+            outline: none;
+        }
+
+        /* Syntax Colors */
+        /* kw-main stripped of styling to prevent cursor/alignment issues */
+        .kw-main { color: inherit; font-weight: inherit; } 
+        
+        .kw-func { color: #f472b6; } /* Pink (COUNT, MAX) */
+        .kw-str { color: #a3e635; } /* Lime (Strings) */
+        .kw-num { color: #fb923c; } /* Orange (Numbers) */
+        .kw-comment { color: #64748b; font-style: italic; } /* Slate (Comments) */
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease-out forwards; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-200 font-sans h-screen flex flex-col overflow-hidden selection:bg-blue-500/30">
+
+    <!-- Header -->
+    <header class="h-14 border-b border-slate-800 flex items-center justify-between px-4 bg-slate-900/80 backdrop-blur-sm sticky top-0 z-20">
+        <div class="flex items-center gap-3">
+            <!-- Mobile Menu Toggle -->
+            <button id="menu-btn" class="md:hidden p-1.5 text-slate-400 hover:text-white rounded hover:bg-slate-800">
+                <i data-lucide="menu" class="w-5 h-5"></i>
+            </button>
+            
+            <div class="flex items-center gap-2">
+                <i data-lucide="database" class="w-5 h-5 text-blue-400"></i>
+                <h1 class="font-bold text-lg bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent hidden sm:block">
+                    SQL Playground HD
+                </h1>
+                <h1 class="font-bold text-lg text-blue-400 sm:hidden">SQL</h1>
+                <span class="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-800 text-slate-500 border border-slate-700 font-mono">
+                    Local Cache
+                </span>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-3">
+            <div id="notification" class="hidden text-xs px-3 py-1.5 rounded-full flex items-center gap-2 transition-all duration-300">
+                <!-- Injected via JS -->
+            </div>
+            <button onclick="app.resetDatabase()" class="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-red-400 transition-colors group" title="Reset Database">
+                <i data-lucide="rotate-ccw" class="w-4 h-4 transition-transform group-hover:-rotate-180"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Layout -->
+    <div class="flex flex-1 overflow-hidden relative">
+        
+        <!-- Sidebar (Overlay on mobile, Static on desktop) -->
+        <div id="sidebar" class="absolute inset-y-0 left-0 z-10 w-64 bg-slate-900 border-r border-slate-800 transform -translate-x-full md:translate-x-0 transition-transform duration-300 flex flex-col shadow-xl md:shadow-none">
+            
+            <!-- Sidebar Header -->
+            <div class="p-3 border-b border-slate-800/50 flex justify-between items-center">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Database Schema</span>
+                <button onclick="app.toggleSidebar()" class="md:hidden text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            
+            <!-- Table List -->
+            <div id="table-list" class="flex-1 overflow-y-auto p-2 space-y-1">
+                <!-- Tables injected here -->
+            </div>
+
+            <!-- Study Tools -->
+            <div class="p-3 border-t border-slate-800 bg-slate-900/50">
+                <div class="text-xs text-slate-500 font-semibold mb-2 uppercase tracking-wider">Quick Templates</div>
+                <div class="space-y-1">
+                    <button onclick="app.insertTemplate('filter')" class="w-full text-left text-xs px-3 py-2 hover:bg-slate-800 rounded text-slate-400 hover:text-blue-300 flex items-center gap-2 transition-colors">
+                        <i data-lucide="filter" class="w-3 h-3"></i> Select Filter
+                    </button>
+                    <button onclick="app.insertTemplate('group')" class="w-full text-left text-xs px-3 py-2 hover:bg-slate-800 rounded text-slate-400 hover:text-blue-300 flex items-center gap-2 transition-colors">
+                        <i data-lucide="bar-chart-2" class="w-3 h-3"></i> Group By
+                    </button>
+                    <button onclick="app.insertTemplate('join')" class="w-full text-left text-xs px-3 py-2 hover:bg-slate-800 rounded text-slate-400 hover:text-blue-300 flex items-center gap-2 transition-colors">
+                        <i data-lucide="link" class="w-3 h-3"></i> Inner Join
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Backdrop for mobile sidebar -->
+        <div id="sidebar-backdrop" onclick="app.toggleSidebar()" class="absolute inset-0 bg-black/50 z-0 hidden md:hidden glass"></div>
+
+        <!-- Content Area -->
+        <div class="flex-1 flex flex-col min-w-0 bg-slate-950 md:ml-64 w-full transition-all duration-300">
+            
+            <!-- Editor Toolbar -->
+            <div class="h-10 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-4 shrink-0">
+                <div class="flex items-center gap-3 text-sm text-slate-400">
+                    <i data-lucide="terminal-square" class="w-4 h-4 text-blue-500"></i>
+                    <span class="font-medium">Query Editor</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="app.clearEditor()" class="p-1.5 hover:bg-slate-800 rounded text-slate-500 hover:text-slate-300 transition-colors" title="Clear">
+                        <i data-lucide="eraser" class="w-4 h-4"></i>
+                    </button>
+                    <button onclick="app.runQuery()" class="flex items-center gap-2 px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold uppercase tracking-wide rounded shadow-lg shadow-blue-900/20 transition-all active:scale-95">
+                        <i data-lucide="play" class="w-3 h-3 fill-current"></i> Run
+                    </button>
+                </div>
+            </div>
+
+            <!-- Editor (Custom Implementation) -->
+            <div class="flex-1 min-h-[150px] relative group border-b border-slate-800/50">
+                <div class="editor-container">
+                    <!-- Syntax Highlighting Layer -->
+                    <pre id="code-highlight" aria-hidden="true" class="editor-layer"></pre>
+                    <!-- Input Layer -->
+                    <textarea 
+                        id="sql-input" 
+                        class="editor-layer focus:outline-none" 
+                        spellcheck="false" 
+                        placeholder="-- Enter SQL Query..."
+                    >SELECT * FROM Users</textarea>
+                </div>
+                <!-- Floating hint -->
+                <div class="absolute bottom-2 right-4 text-[10px] text-slate-600 pointer-events-none select-none">
+                    Ctrl + Enter to Run
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div class="flex-1 flex flex-col bg-slate-900/30 min-h-0">
+                <!-- Tabs -->
+                <div class="flex items-center px-4 border-b border-slate-800 bg-slate-900/50 h-10 shrink-0">
+                    <button onclick="app.switchTab('results')" id="tab-results" class="h-full px-4 text-sm border-b-2 border-blue-500 text-blue-400 font-medium transition-colors">
+                        Results
+                    </button>
+                    <button onclick="app.switchTab('history')" id="tab-history" class="h-full px-4 text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-300 transition-colors">
+                        History
+                    </button>
+                    <div class="ml-auto">
+                        <button onclick="app.downloadCSV()" id="download-btn" class="hidden p-1.5 hover:bg-slate-800 rounded text-slate-500 hover:text-blue-400" title="Export CSV">
+                            <i data-lucide="download" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tab Content -->
+                <div id="results-container" class="flex-1 overflow-auto relative">
+                    <!-- Default State -->
+                    <div id="empty-state" class="absolute inset-0 flex flex-col items-center justify-center text-slate-600 gap-3">
+                        <div class="p-4 rounded-full bg-slate-900/50">
+                            <i data-lucide="table-2" class="w-8 h-8 opacity-50"></i>
+                        </div>
+                        <p class="text-sm">Run a query to view results</p>
+                    </div>
+                    
+                    <!-- Table Container -->
+                    <div id="table-wrapper" class="hidden w-full h-full">
+                        <table class="w-full text-left text-sm border-collapse">
+                            <thead class="bg-slate-800 sticky top-0 z-10 text-slate-400 text-xs uppercase tracking-wider font-semibold shadow-sm">
+                                <tr id="table-head-row"></tr>
+                            </thead>
+                            <tbody id="table-body" class="divide-y divide-slate-800/50 text-slate-300"></tbody>
+                        </table>
+                    </div>
+
+                    <!-- History Container -->
+                    <div id="history-wrapper" class="hidden w-full h-full divide-y divide-slate-800/50">
+                        <!-- History items injected here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Logic -->
+    <script>
+        const INITIAL_SQL = `
+            CREATE TABLE IF NOT EXISTS Users (id INT, name STRING, role STRING, email STRING);
+            INSERT INTO Users VALUES (1, 'Alice Dev', 'admin', 'alice@code.com');
+            INSERT INTO Users VALUES (2, 'Bob Design', 'editor', 'bob@pixel.io');
+            INSERT INTO Users VALUES (3, 'Charlie Test', 'viewer', 'charlie@qa.net');
+            
+            CREATE TABLE IF NOT EXISTS Orders (order_id INT, user_id INT, amount INT, status STRING);
+            INSERT INTO Orders VALUES (101, 1, 250, 'completed');
+            INSERT INTO Orders VALUES (102, 2, 120, 'pending');
+            INSERT INTO Orders VALUES (103, 1, 400, 'shipped');
+        `;
+
+        const App = {
+            db: null,
+            history: [],
+            lastResults: [],
+            lastColumns: [],
+
+            init() {
+                // Initialize Lucide icons
+                lucide.createIcons();
+
+                // Setup Editor Listeners
+                this.setupEditor();
+
+                // Init Database
+                this.initDB();
+
+                // Init UI Listeners
+                document.getElementById('menu-btn').addEventListener('click', () => this.toggleSidebar());
+
+                // Initial Highlight
+                this.updateHighlighter();
+            },
+
+            setupEditor() {
+                const textarea = document.getElementById('sql-input');
+                const highlighter = document.getElementById('code-highlight');
+
+                // Sync Scrolling
+                textarea.addEventListener('scroll', () => {
+                    highlighter.scrollTop = textarea.scrollTop;
+                    highlighter.scrollLeft = textarea.scrollLeft;
+                });
+
+                // Input Handling (Highlighting + Auto Brackets)
+                textarea.addEventListener('input', () => this.updateHighlighter());
+                
+                textarea.addEventListener('keydown', (e) => {
+                    // Run Query Shortcut
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                        this.runQuery();
+                        return;
+                    }
+
+                    // Auto-Close Brackets Logic
+                    const pairs = {
+                        '(': ')',
+                        '[': ']',
+                        '{': '}',
+                        "'": "'",
+                        '"': '"'
+                    };
+
+                    if (pairs[e.key]) {
+                        e.preventDefault();
+                        const start = textarea.selectionStart;
+                        const end = textarea.selectionEnd;
+                        const val = textarea.value;
+                        const closing = pairs[e.key];
+
+                        // Insert pair
+                        textarea.value = val.substring(0, start) + e.key + closing + val.substring(end);
+                        
+                        // Move cursor to middle
+                        textarea.selectionStart = textarea.selectionEnd = start + 1;
+                        
+                        this.updateHighlighter();
+                    }
+                    // Handle Backspace (delete pair if empty)
+                    else if (e.key === 'Backspace') {
+                        const start = textarea.selectionStart;
+                        const val = textarea.value;
+                        if (start > 0) {
+                            const charBefore = val[start - 1];
+                            const charAfter = val[start];
+                            // Check if we are deleting the opening char of an empty pair
+                            if ((charBefore === '(' && charAfter === ')') ||
+                                (charBefore === '[' && charAfter === ']') ||
+                                (charBefore === '{' && charAfter === '}') ||
+                                (charBefore === "'" && charAfter === "'") ||
+                                (charBefore === '"' && charAfter === '"')) {
+                                e.preventDefault();
+                                textarea.value = val.substring(0, start - 1) + val.substring(start + 1);
+                                textarea.selectionStart = textarea.selectionEnd = start - 1;
+                                this.updateHighlighter();
+                            }
+                        }
+                    }
+                });
+            },
+
+            updateHighlighter() {
+                const textarea = document.getElementById('sql-input');
+                const highlighter = document.getElementById('code-highlight');
+                let code = textarea.value;
+
+                // Escape HTML
+                code = code.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+                // Simple Regex Syntax Highlighting
+                // Keywords - kw-main is used but styling is Inherit
+                code = code.replace(/\b(SELECT|FROM|WHERE|INSERT|INTO|VALUES|UPDATE|DELETE|CREATE|TABLE|DROP|JOIN|ON|GROUP|BY|ORDER|LIMIT|AND|OR|NOT|AS|IS|NULL)\b/gi, '<span class="kw-main">$1</span>');
+                // Functions/Types
+                code = code.replace(/\b(COUNT|SUM|AVG|MAX|MIN|INT|STRING|DATE|TEXT)\b/gi, '<span class="kw-func">$1</span>');
+                // Numbers
+                code = code.replace(/\b(\d+)\b/g, '<span class="kw-num">$1</span>');
+                // Strings (Simple quote handling)
+                code = code.replace(/(['"])(.*?)\1/g, '<span class="kw-str">$1$2$1</span>');
+                // Comments
+                code = code.replace(/(--.*)/g, '<span class="kw-comment">$1</span>');
+
+                // Handle trailing newline for visual consistency
+                if (code.endsWith('\n')) {
+                    code += ' ';
+                }
+
+                highlighter.innerHTML = code;
+            },
+
+            initDB() {
+                try {
+                    // Check local storage
+                    const saved = localStorage.getItem('sql_playground_hd_tables');
+                    
+                    window.alasql('CREATE DATABASE IF NOT EXISTS playground');
+                    window.alasql('USE playground');
+
+                    if (saved) {
+                        const tables = JSON.parse(saved);
+                        window.alasql.tables = tables;
+                        this.notify("Database restored from cache", "success");
+                    } else {
+                        window.alasql(INITIAL_SQL);
+                    }
+                    
+                    this.refreshSidebar();
+                    // Run initial select without notification
+                    this.runQuery(true);
+                } catch (e) {
+                    console.error(e);
+                    this.notify("Error initializing DB", "error");
+                }
+            },
+
+            resetDatabase() {
+                if(confirm("Reset database to factory settings? All changes will be lost.")) {
+                    localStorage.removeItem('sql_playground_hd_tables');
+                    window.alasql('DROP DATABASE playground');
+                    window.alasql('CREATE DATABASE playground');
+                    window.alasql('USE playground');
+                    window.alasql(INITIAL_SQL);
+                    this.refreshSidebar();
+                    document.getElementById('sql-input').value = "SELECT * FROM Users";
+                    this.updateHighlighter();
+                    this.runQuery();
+                    this.notify("Database reset successfully", "success");
+                }
+            },
+
+            saveDB() {
+                try {
+                    const data = JSON.stringify(window.alasql.tables);
+                    localStorage.setItem('sql_playground_hd_tables', data);
+                } catch (e) {
+                    console.error("Storage full");
+                }
+            },
+
+            refreshSidebar() {
+                const list = document.getElementById('table-list');
+                list.innerHTML = '';
+                
+                const res = window.alasql('SHOW TABLES');
+                if (res.length === 0) {
+                    list.innerHTML = '<div class="p-2 text-xs text-slate-600 text-center">No tables</div>';
+                    return;
+                }
+
+                res.forEach(t => {
+                    const tableName = t.tableid;
+                    // Get columns safely
+                    let columns = [];
+                    try {
+                        const sample = window.alasql(`SELECT * FROM ${tableName} LIMIT 1`);
+                        if (sample.length > 0) columns = Object.keys(sample[0]);
+                    } catch(e) {}
+
+                    const div = document.createElement('div');
+                    div.className = 'mb-1';
+                    div.innerHTML = `
+                        <details class="group">
+                            <summary class="flex items-center gap-2 cursor-pointer px-2 py-1.5 hover:bg-slate-800 rounded text-sm text-slate-300 select-none transition-colors">
+                                <i data-lucide="table" class="w-3.5 h-3.5 text-slate-500 group-open:text-blue-400"></i>
+                                <span class="font-medium truncate">${tableName}</span>
+                            </summary>
+                            <div class="pl-7 pr-2 py-1 space-y-1">
+                                ${columns.map(c => `
+                                    <div class="flex items-center gap-2 text-[10px] text-slate-500 font-mono">
+                                        <div class="w-1 h-1 rounded-full bg-slate-700"></div> ${c}
+                                    </div>
+                                `).join('')}
+                                <button onclick="app.quickSelect('${tableName}')" class="mt-2 text-[10px] text-blue-400 hover:underline flex items-center gap-1">
+                                    <i data-lucide="play-circle" class="w-3 h-3"></i> Query Table
+                                </button>
+                            </div>
+                        </details>
+                    `;
+                    list.appendChild(div);
+                });
+                lucide.createIcons();
+            },
+
+            runQuery(silent = false) {
+                const query = document.getElementById('sql-input').value.trim();
+                if (!query) return;
+
+                const start = performance.now();
+                try {
+                    // Split statements (basic split by semicolon)
+                    const stmts = query.split(';').filter(s => s.trim().length > 0);
+                    let res = [];
+                    stmts.forEach(s => {
+                        res = window.alasql(s);
+                    });
+
+                    // Save state
+                    this.saveDB();
+                    this.refreshSidebar();
+
+                    if (!silent) {
+                        const time = (performance.now() - start).toFixed(2);
+                        this.notify(`Executed in ${time}ms`, "success");
+                        this.addToHistory(query, "success");
+                    }
+
+                    // Render Result
+                    if (Array.isArray(res)) {
+                        this.renderTable(res);
+                        this.switchTab('results');
+                    } else {
+                        // DDL command
+                        this.lastResults = [];
+                        this.renderTable([]);
+                    }
+
+                } catch (e) {
+                    if (!silent) {
+                        this.notify("Query Error", "error");
+                        this.renderError(e.message);
+                        this.addToHistory(query, "error");
+                    }
+                }
+            },
+
+            renderTable(data) {
+                const container = document.getElementById('table-wrapper');
+                const empty = document.getElementById('empty-state');
+                const thead = document.getElementById('table-head-row');
+                const tbody = document.getElementById('table-body');
+                const btn = document.getElementById('download-btn');
+
+                if (!data || data.length === 0) {
+                    container.classList.add('hidden');
+                    empty.classList.remove('hidden');
+                    btn.classList.add('hidden');
+                    return;
+                }
+
+                container.classList.remove('hidden');
+                empty.classList.add('hidden');
+                btn.classList.remove('hidden');
+
+                this.lastResults = data;
+                this.lastColumns = Object.keys(data[0]);
+
+                // Header
+                thead.innerHTML = `
+                    <th class="w-12 px-4 py-2 text-center border-b border-slate-700 bg-slate-800">#</th>
+                    ${this.lastColumns.map(c => `<th class="px-4 py-2 border-b border-slate-700 whitespace-nowrap">${c}</th>`).join('')}
+                `;
+
+                // Body
+                tbody.innerHTML = data.map((row, i) => `
+                    <tr class="hover:bg-slate-800/50 transition-colors">
+                        <td class="px-4 py-2 text-center text-slate-600 font-mono text-xs bg-slate-900/20">${i + 1}</td>
+                        ${this.lastColumns.map(col => `
+                            <td class="px-4 py-2 whitespace-nowrap overflow-hidden max-w-xs text-ellipsis">
+                                ${row[col] === null || row[col] === undefined ? '<span class="text-slate-600 italic">null</span>' : row[col]}
+                            </td>
+                        `).join('')}
+                    </tr>
+                `).join('');
+            },
+
+            renderError(msg) {
+                const container = document.getElementById('table-wrapper');
+                const empty = document.getElementById('empty-state');
+                
+                container.classList.add('hidden');
+                empty.classList.add('hidden');
+
+                // Inject error view directly into results-container
+                const wrapper = document.getElementById('results-container');
+                const existingError = document.getElementById('error-msg');
+                if (existingError) existingError.remove();
+
+                const errDiv = document.createElement('div');
+                errDiv.id = 'error-msg';
+                errDiv.className = 'p-4 m-4 bg-red-950/30 border-l-4 border-red-500 rounded text-red-200 font-mono text-sm fade-in';
+                errDiv.innerHTML = `<strong>Error:</strong> ${msg}`;
+                
+                wrapper.appendChild(errDiv);
+                
+                // Remove error after 5s or next run
+                setTimeout(() => {
+                    if (errDiv.parentNode) errDiv.remove();
+                    if (!this.lastResults.length) empty.classList.remove('hidden');
+                    else container.classList.remove('hidden');
+                }, 5000);
+            },
+
+            addToHistory(sql, status) {
+                this.history.unshift({ sql, status, time: new Date().toLocaleTimeString() });
+                this.renderHistory();
+            },
+
+            renderHistory() {
+                const container = document.getElementById('history-wrapper');
+                if (this.history.length === 0) {
+                    container.innerHTML = '<div class="p-8 text-center text-slate-600">No history yet</div>';
+                    return;
+                }
+
+                container.innerHTML = this.history.map(item => `
+                    <div class="p-3 hover:bg-slate-800/30 flex flex-col gap-2 group transition-colors">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="${item.status === 'success' ? 'text-green-400' : 'text-red-400'} font-bold uppercase text-[10px] tracking-wider bg-slate-900 px-1.5 py-0.5 rounded">
+                                ${item.status}
+                            </span>
+                            <span class="text-slate-500 font-mono">${item.time}</span>
+                        </div>
+                        <div class="font-mono text-sm text-slate-300 truncate opacity-80">${item.sql}</div>
+                        <div class="flex gap-3 pt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onclick="app.loadQuery('${item.sql.replace(/'/g, "\\'")}')" class="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1">
+                                <i data-lucide="copy" class="w-3 h-3"></i> Use
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+                lucide.createIcons();
+            },
+
+            loadQuery(sql) {
+                document.getElementById('sql-input').value = sql;
+                this.updateHighlighter();
+                this.runQuery();
+            },
+
+            quickSelect(table) {
+                document.getElementById('sql-input').value = `SELECT * FROM ${table} LIMIT 10`;
+                this.updateHighlighter();
+                this.runQuery();
+            },
+
+            insertTemplate(type) {
+                const templates = {
+                    'filter': "SELECT * FROM Users WHERE role = 'admin'",
+                    'group': "SELECT role, COUNT(*) FROM Users GROUP BY role",
+                    'join': "SELECT u.name, o.amount FROM Users u JOIN Orders o ON u.id = o.user_id"
+                };
+                document.getElementById('sql-input').value = templates[type];
+                this.updateHighlighter();
+                // Close sidebar on mobile after selection
+                if (window.innerWidth < 768) {
+                    this.toggleSidebar();
+                }
+            },
+
+            clearEditor() {
+                document.getElementById('sql-input').value = '';
+                this.updateHighlighter();
+                document.getElementById('sql-input').focus();
+            },
+
+            toggleSidebar() {
+                const sidebar = document.getElementById('sidebar');
+                const backdrop = document.getElementById('sidebar-backdrop');
+                const isHidden = sidebar.classList.contains('-translate-x-full');
+
+                if (isHidden) {
+                    sidebar.classList.remove('-translate-x-full');
+                    backdrop.classList.remove('hidden');
+                } else {
+                    sidebar.classList.add('-translate-x-full');
+                    backdrop.classList.add('hidden');
+                }
+            },
+
+            switchTab(tab) {
+                const resultsWrapper = document.getElementById('results-container');
+                const resBtn = document.getElementById('tab-results');
+                const hisBtn = document.getElementById('tab-history');
+                const tableWrap = document.getElementById('table-wrapper');
+                const histWrap = document.getElementById('history-wrapper');
+                const dlBtn = document.getElementById('download-btn');
+
+                if (tab === 'results') {
+                    resBtn.className = "h-full px-4 text-sm border-b-2 border-blue-500 text-blue-400 font-medium transition-colors";
+                    hisBtn.className = "h-full px-4 text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-300 transition-colors";
+                    
+                    histWrap.classList.add('hidden');
+                    // Only show table if we have data
+                    if (this.lastResults.length > 0) {
+                        tableWrap.classList.remove('hidden');
+                        document.getElementById('empty-state').classList.add('hidden');
+                        dlBtn.classList.remove('hidden');
+                    } else {
+                        document.getElementById('empty-state').classList.remove('hidden');
+                        dlBtn.classList.add('hidden');
+                    }
+                } else {
+                    hisBtn.className = "h-full px-4 text-sm border-b-2 border-blue-500 text-blue-400 font-medium transition-colors";
+                    resBtn.className = "h-full px-4 text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-300 transition-colors";
+                    
+                    tableWrap.classList.add('hidden');
+                    document.getElementById('empty-state').classList.add('hidden');
+                    histWrap.classList.remove('hidden');
+                    dlBtn.classList.add('hidden');
+                }
+            },
+
+            downloadCSV() {
+                if (!this.lastResults.length) return;
+                const headers = this.lastColumns.join(',');
+                const rows = this.lastResults.map(row => 
+                    this.lastColumns.map(col => {
+                        const cell = row[col] === null ? '' : row[col];
+                        return `"${String(cell).replace(/"/g, '""')}"`;
+                    }).join(',')
+                );
+                
+                const csv = [headers, ...rows].join('\n');
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'query_results.csv';
+                a.click();
+            },
+
+            notify(msg, type) {
+                const el = document.getElementById('notification');
+                el.innerHTML = `
+                    <div class="w-1.5 h-1.5 rounded-full ${type === 'error' ? 'bg-red-500' : 'bg-green-500'}"></div>
+                    ${msg}
+                `;
+                el.className = `text-xs px-3 py-1.5 rounded-full flex items-center gap-2 border fade-in ${
+                    type === 'error' ? 'bg-red-900/20 border-red-900/50 text-red-200' : 'bg-green-900/20 border-green-900/50 text-green-200'
+                }`;
+                el.classList.remove('hidden');
+                setTimeout(() => el.classList.add('hidden'), 3000);
+            }
+        };
+
+        // Boot
+        window.app = App; // Expose for HTML event handlers
+        window.addEventListener('DOMContentLoaded', () => App.init());
+
+    </script>
+</body>
+</html>
