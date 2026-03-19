@@ -502,6 +502,52 @@ textarea:focus {
         visibility: visible;
     }
     
+    /* Mobile Tool Grid */
+    .mobile-tool-grid {
+        display: none;
+        padding: 20px 16px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .mobile-tool-title {
+        color: white;
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 16px;
+        text-align: center;
+    }
+    
+    .mobile-tools-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+    
+    .mobile-tool-btn {
+        padding: 16px 12px;
+        background: white;
+        border: none;
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 600;
+        color: #374151;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        min-height: 60px;
+    }
+    
+    .mobile-tool-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    
+    @media (max-width: 768px) {
+        .mobile-tool-grid {
+            display: block;
+        }
+    }
+    
     .category-content {
         flex: 1;
         padding: 16px 16px 40px;

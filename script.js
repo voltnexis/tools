@@ -42,6 +42,30 @@ function switchCategory(category) {
     document.getElementById(category).classList.add('active');
 }
 
+// Open specific tool from mobile quick access
+function openTool(toolId, category) {
+    switchCategory(category);
+    
+    // Find and activate the specific tool
+    setTimeout(() => {
+        const categoryContent = document.getElementById(category);
+        if (categoryContent) {
+            categoryContent.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+            categoryContent.querySelectorAll('.tool-content').forEach(c => c.classList.remove('active'));
+            
+            const toolBtn = categoryContent.querySelector(`[data-tool="${toolId}"]`);
+            if (toolBtn) {
+                toolBtn.classList.add('active');
+            }
+            
+            const toolContent = document.getElementById(toolId);
+            if (toolContent) {
+                toolContent.classList.add('active');
+            }
+        }
+    }, 100);
+}
+
 initNavigation();
 
 // Utilities
