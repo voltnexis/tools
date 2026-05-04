@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OS Hub by VoltNexis | Direct OS Downloads</title>
+    <meta name="description" content="OS Hub by VoltNexis - The ultimate repository for secure, direct, and official Operating System downloads. Find Windows, Linux, Debian, Kali, and more.">
+    <meta name="keywords" content="OS Hub, VoltNexis, Operating Systems, Linux Download, Windows ISO, Debian, Kali Linux, Direct Download, Secure OS">
+    <meta name="author" content="VoltNexis">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://tools.voltnexis.in/os-hub">
+
+    <!-- Favicons -->
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png">
+    <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+    <link rel="manifest" href="assets/site.webmanifest" crossorigin="use-credentials">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://tools.voltnexis.in/os-hub">
+    <meta property="og:title" content="OS Hub by VoltNexis | Direct OS Downloads">
+    <meta property="og:description" content="Secure, direct, and official download links for all major Operating Systems. Managed by VoltNexis.">
+    <meta property="og:image" content="https://tools.voltnexis.in/os-hub/assets/logo.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://tools.voltnexis.in/os-hub">
+    <meta property="twitter:title" content="OS Hub by VoltNexis | Direct OS Downloads">
+    <meta property="twitter:description" content="Secure, direct, and official download links for all major Operating Systems. Managed by VoltNexis.">
+    <meta property="twitter:image" content="https://tools.voltnexis.in/os-hub/assets/logo.png">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="dark-theme">
+    <div class="glow-container">
+        <div class="glow-orb orb-1"></div>
+        <div class="glow-orb orb-2"></div>
+    </div>
+
+    <header>
+        <div class="container nav-container">
+            <div class="logo-area">
+                <img src="assets/logo.png" alt="VoltNexis Logo" class="brand-logo">
+                <div class="brand-text">
+                    <span class="brand-name">OS Hub</span>
+                    <span class="brand-tagline">by VoltNexis</span>
+                </div>
+            </div>
+            <nav>
+                <a href="https://tools.voltnexis.in" class="nav-link">More Tools</a>
+                <a href="#" class="btn btn-primary">Join Community</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="container">
+                <div class="hero-content">
+                    <h1>The Ultimate OS Repository</h1>
+                    <p>Secure, direct, and official download links for Windows, Linux, macOS, and more.</p>
+                    
+                    <div class="search-container">
+                        <div class="search-wrapper glass">
+                            <i data-lucide="search" class="search-icon"></i>
+                            <input type="text" id="osSearch" placeholder="Search for Windows, Ubuntu, Kali..." autocomplete="off">
+                            <div class="search-badge">PRO</div>
+                        </div>
+                    </div>
+
+                    <div class="filter-bar">
+                        <button class="filter-btn active" data-filter="all">All Systems</button>
+                        <button class="filter-btn" data-filter="Desktop">Desktop</button>
+                        <button class="filter-btn" data-filter="Linux">Linux</button>
+                        <button class="filter-btn" data-filter="Server">Server</button>
+                        <button class="filter-btn" data-filter="Security">Security</button>
+                        <button class="filter-btn" data-filter="Mobile-Port">Mobile Port</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="os-grid-section">
+            <div class="container">
+                <div class="stats-bar">
+                    <span id="resultsCount">Loading repositories...</span>
+                    <div class="view-toggle">
+                        <i data-lucide="layout-grid" class="active"></i>
+                        <i data-lucide="list"></i>
+                    </div>
+                </div>
+                
+                <div id="osGrid" class="os-grid">
+                    <!-- Cards will be injected here by JS -->
+                    <div class="loader"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <div class="logo-area">
+                        <img src="assets/logo.png" alt="VoltNexis Logo" class="brand-logo">
+                        <span class="brand-name">OS Hub</span>
+                    </div>
+                    <p>A VoltNexis initiative to provide clean, safe, and direct access to software.</p>
+                </div>
+                <div class="footer-links">
+                    <h4>Resources</h4>
+                    <a href="#">Official Docs</a>
+                    <a href="#">Checksum Verification</a>
+                    <a href="#">Safe Computing Guide</a>
+                </div>
+                <div class="footer-links">
+                    <h4>Connect</h4>
+                    <a href="#">Twitter</a>
+                    <a href="#">Discord</a>
+                    <a href="#">GitHub</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 VoltNexis. All rights reserved. tools.voltnexis.in/os-hub</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Species Modal -->
+    <div id="osModal" class="modal">
+        <div class="modal-content glass">
+            <div class="modal-header">
+                <div class="modal-title-area">
+                    <img src="" id="modalIcon" alt="OS Icon">
+                    <div>
+                        <h2 id="modalName">OS Name</h2>
+                        <span id="modalBrand">Brand</span>
+                    </div>
+                </div>
+                <button class="close-modal"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <h3>Available Species & Versions</h3>
+                <div id="speciesList" class="species-list">
+                    <!-- Species injected here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="script.js"></script>
+</body>
+</html>
